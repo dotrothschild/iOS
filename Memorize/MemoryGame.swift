@@ -9,11 +9,53 @@
 import Foundation
 
 // only at run time is the 'face' <CardContent> of the card determined, ex string (Emoji), image etc
-struct MemoryGame<CardContent> {
+struct MemoryGame<CardContent> where CardContent: Equatable {
     var cards: Array<Card>
     
-    func choose(card: Card) {
-        print("card chosen : \(card)")
+    var indexOfTheOneAndOnlyFaceUpCard: Int? {
+        get { cards.indices.filter { cards[$0].isFaceUp }.only
+            
+            /*
+            var faceUpCardIndices = [Int]()
+            for index in cards.indices {
+                if cards[index].isFaceUp {
+                    faceUpCardIndices.append(index)
+                }
+            }
+            if faceUpCardIndices.count == 1 {
+                return faceUpCardIndices.first
+            } else {
+                return nil
+            } */
+        }
+        set { // the setter flips all cards face down, that's what it sets
+            for index in cards.indices {
+                cards[index].isFaceUp = index == newValue // same as code commented out
+                /*
+                if index == newValue {
+                    cards[index].isFaceUp = true
+                } else {
+                    cards[index].isFaceUp = false
+                } */
+            }
+        }
+    }
+    
+    mutating func choose(card: Card) { // functions that change 'self' in struct must be mutating
+        // dont want to print, kept for code reference print("card chosen : \(card)")
+        // find the index of selected card to get reference to the card
+        if let chosenIndex = cards.firstIndex(matching: card), !cards[chosenIndex].isFaceUp, !cards[chosenIndex].isMatched { // , is sequential and
+            if let potentialMatchIndex = indexOfTheOneAndOnlyFaceUpCard {
+                if cards[chosenIndex].content == cards[potentialMatchIndex].content {
+                    cards[chosenIndex].isMatched = true
+                    cards[potentialMatchIndex].isMatched = true
+                }
+                self.cards[chosenIndex].isFaceUp = true
+            } else {
+                indexOfTheOneAndOnlyFaceUpCard = chosenIndex
+            }
+           
+        }
     }
     
     // CardContent is String, the Emoji
@@ -26,11 +68,11 @@ struct MemoryGame<CardContent> {
             cards.append(Card(content: content, id: pairIndex*2+1))
         }
         // doing this is EmojiMemoryGame instead (viewModel)
-        // cards.shuffle()
+        cards.shuffle() // with here, the click to reverse works correctly with @Published private var model: MemoryGame<String>
     }
     
     struct Card: Identifiable { // identifiable is ieterator
-        var isFaceUp: Bool = true
+        var isFaceUp: Bool = false
         var isMatched: Bool = false
         var content: CardContent // don't care what the card will be when created passing the card 'type' <CardContent>
         var id: Int // this is for identifiable
