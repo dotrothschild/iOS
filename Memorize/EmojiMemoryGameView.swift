@@ -1,4 +1,7 @@
-//
+//  *******************************
+//  *********** VIEW (Kotlin: Activity)
+//  *******************************
+
 //  EmojiMemoryGameView.swift
 //  Memorize
 //
@@ -11,22 +14,30 @@ import SwiftUI
 
 struct EmojiMemoryGameView: View {
     
-    @ObservedObject var viewModel: EmojiMemoryGame //
+    @ObservedObject var viewModel: EmojiMemoryGameViewModel //
     var body: some View {
-        // {card in... is the 2nd param!!!
-        Grid(viewModel.cards)  {card in  // 2nd param is function , viewForItem: {... in swift, don't need to explicitly state it
-            CardView(card: card).onTapGesture {
-                viewModel.choose(card: card)
+        NavigationView {
+            VStack {
+                Grid(viewModel.cards)  {card in  // 2nd param is function , viewForItem: {... in swift, don't need to explicitly state it
+                    CardView(card: card).onTapGesture {
+                        viewModel.choose(card: card)
+                    }
+                    .padding(5)
+                }
+                .padding()
+                .foregroundColor(Color.orange)
+                Text("Score: \(viewModel.score)")
             }
-            .padding(5)
+            .navigationBarTitle("\(viewModel.theme.name)")
+            .navigationBarItems(trailing: Button("New Game") {
+                viewModel.newGame()
+            })
         }
-        .padding()
-        .foregroundColor(Color.orange)
     }
 }
 
 struct CardView: View {
-    var card: MemoryGame<String>.Card
+    var card: EmojiMemoryGameModel<String>.Card
     
     var body: some View {
         // need geometry to size font in card
@@ -60,6 +71,6 @@ struct CardView: View {
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        EmojiMemoryGameView(viewModel: EmojiMemoryGame())
+        EmojiMemoryGameView(viewModel: EmojiMemoryGameViewModel())
     }
 }

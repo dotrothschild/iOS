@@ -1,4 +1,7 @@
-//
+//  **************************************************************
+//  ***********************  Model *******************************
+//  **************************************************************
+
 //  MemoryGame.swift
 //  Memorize
 //
@@ -9,34 +12,16 @@
 import Foundation
 
 // only at run time is the 'face' <CardContent> of the card determined, ex string (Emoji), image etc
-struct MemoryGame<CardContent> where CardContent: Equatable {
+struct EmojiMemoryGameModel<CardContent> where CardContent: Equatable {
     var cards: Array<Card>
+    var score = 0
     
     var indexOfTheOneAndOnlyFaceUpCard: Int? {
         get { cards.indices.filter { cards[$0].isFaceUp }.only
-            
-            /*
-            var faceUpCardIndices = [Int]()
-            for index in cards.indices {
-                if cards[index].isFaceUp {
-                    faceUpCardIndices.append(index)
-                }
-            }
-            if faceUpCardIndices.count == 1 {
-                return faceUpCardIndices.first
-            } else {
-                return nil
-            } */
         }
         set { // the setter flips all cards face down, that's what it sets
             for index in cards.indices {
                 cards[index].isFaceUp = index == newValue // same as code commented out
-                /*
-                if index == newValue {
-                    cards[index].isFaceUp = true
-                } else {
-                    cards[index].isFaceUp = false
-                } */
             }
         }
     }
