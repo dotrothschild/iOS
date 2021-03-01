@@ -19,13 +19,15 @@ struct EmojiMemoryGameView: View {
         NavigationView {
             VStack {
                 Grid(viewModel.cards)  {card in  // 2nd param is function , viewForItem: {... in swift, don't need to explicitly state it
-                    CardView(card: card).onTapGesture {
-                        viewModel.choose(card: card)
+                    CardView(card: card,
+                             gradient: Gradient(colors: [self.viewModel.theme.color, self.viewModel.theme.accent]))
+                        .onTapGesture {
+                             self.viewModel.choose(card: card)
                     }
                     .padding(5)
                 }
                 .padding()
-                .foregroundColor(Color.orange)
+                .foregroundColor(viewModel.theme.color)
                 Text("Score: \(viewModel.score)")
             }
             .navigationBarTitle("\(viewModel.theme.name)")
@@ -38,6 +40,7 @@ struct EmojiMemoryGameView: View {
 
 struct CardView: View {
     var card: EmojiMemoryGameModel<String>.Card
+    let gradient: Gradient
     
     var body: some View {
         // need geometry to size font in card
@@ -50,7 +53,8 @@ struct CardView: View {
                 } else {
                     // only flip if !matched else is matched 'magically' removes card
                     if !card.isMatched {
-                       RoundedRectangle(cornerRadius: cornerRadius).fill()// don't need this because moved to single line in HStack.aspectRatio(2/3, contentMode: .fit)
+                       RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(LinearGradient(gradient: gradient, startPoint: .topLeading, endPoint: .bottomTrailing))// don't need this because moved to single line in HStack.aspectRatio(2/3, contentMode: .fit)
                     }
                 }
             }

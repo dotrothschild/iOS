@@ -6,7 +6,7 @@
 //  Memorize
 //
 //  Created by Shimon Rothschild on 2-02-21.
-//
+//  Timer function is NOT completed
 
 
 import Foundation
@@ -28,15 +28,25 @@ struct EmojiMemoryGameModel<CardContent> where CardContent: Equatable {
     
     mutating func choose(card: Card) { // functions that change 'self' in struct must be mutating
         // dont want to print, kept for code reference print("card chosen : \(card)")
-        // find the index of selected card to get reference to the card
         if let chosenIndex = cards.firstIndex(matching: card), !cards[chosenIndex].isFaceUp, !cards[chosenIndex].isMatched { // , is sequential and
+            cards[chosenIndex].flipCount += 1
+            cards[chosenIndex].startTimer()
             if let potentialMatchIndex = indexOfTheOneAndOnlyFaceUpCard {
                 if cards[chosenIndex].content == cards[potentialMatchIndex].content {
                     cards[chosenIndex].isMatched = true
                     cards[potentialMatchIndex].isMatched = true
-                }
+                    // no matter how many times seen add 2 points
+                    score += 2
+                } // no match and flip second card over to see this
+                else {
+                    // is it 2nd time seeing and no match
+                    if (cards[chosenIndex].flipCount > 1) {
+                        score -= 1}
+                    if (cards[potentialMatchIndex].flipCount > 1) {
+                        score -= 1}                }
                 self.cards[chosenIndex].isFaceUp = true
-            } else {
+                
+            } else { // it is the first card
                 indexOfTheOneAndOnlyFaceUpCard = chosenIndex
             }
            
@@ -60,6 +70,18 @@ struct EmojiMemoryGameModel<CardContent> where CardContent: Equatable {
         var isFaceUp: Bool = false
         var isMatched: Bool = false
         var content: CardContent // don't care what the card will be when created passing the card 'type' <CardContent>
+        var flipCount: Int = 0
+        var totalFaceupTime: TimeInterval = 0
+        var timeStamp: Date? // when card was flipped
         var id: Int // this is for identifiable
+        
+        mutating func startTimer() {
+            timeStamp = Date()
+        }
+        
+        private mutating func stopTimer() {
+            totalFaceupTime = timeStamp!.timeIntervalSinceNow
+        }
     }
 }
+
