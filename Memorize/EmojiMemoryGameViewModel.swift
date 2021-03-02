@@ -25,7 +25,7 @@ class EmojiMemoryGameViewModel: ObservableObject {
     }
 
     
-    static func createMemoryGame(theme: Theme) -> EmojiMemoryGameModel<String> {
+    private static func createMemoryGame(theme: Theme) -> EmojiMemoryGameModel<String> {
         // get the random theme
        
         let emojis = theme.emojis.shuffled()
@@ -39,7 +39,7 @@ class EmojiMemoryGameViewModel: ObservableObject {
             return emojis[pairIndex]
         }
     }
-    
+    // MARK: - Intent always public
     func choose(card: EmojiMemoryGameModel<String>.Card) {
         // Here SQL would go if needed
         objectWillChange.send()

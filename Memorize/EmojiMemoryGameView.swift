@@ -22,18 +22,25 @@ struct EmojiMemoryGameView: View {
                     CardView(card: card,
                              gradient: Gradient(colors: [self.viewModel.theme.color, self.viewModel.theme.accent]))
                         .onTapGesture {
-                             self.viewModel.choose(card: card)
-                    }
-                    .padding(5)
+                            withAnimation(.linear(duration: 0.75)) {
+                                self.viewModel.choose(card: card)
+                            }
+                           
+                        }
+                        .padding(5)
+                    
                 }
                 .padding()
                 .foregroundColor(viewModel.theme.color)
                 Text("Score: \(viewModel.score)")
             }
             .navigationBarTitle("\(viewModel.theme.name)")
-            .navigationBarItems(trailing: Button("New Game") {
-                viewModel.newGame()
-            })
+            // works original::  .navigationBarItems(trailing: Button("New Game") {
+            .navigationBarItems(trailing: Button(action: {
+                withAnimation(.easeInOut(duration: 1)) {
+                    viewModel.newGame()
+                }
+            }, label: { Text("New Game") }))
         }
     }
 }
@@ -44,30 +51,56 @@ struct CardView: View {
     
     var body: some View {
         // need geometry to size font in card
-        GeometryReader { geometry in   // default inserted this next <#T##(GeometryProxy) -> _#>)// lesson 3
+        GeometryReader { geometry in
+            self.body(for: geometry.size)
+        }
+    }
+    
+    @State private var animatedBonusRemaining: Double = 0 // need this because animations only show past. Initial setting of clock is 0, but that is in future
+    // so can't use card.bonusRemaining, and model won't update every 1/10 second, this gets updated
+    
+    
+    private func startBonusTimeAnimation() {
+        animatedBonusRemaining = card.bonusRemaing
+        withAnimation(.linear(duration: card.bonusTimeRemaining)) {
+            animatedBonusRemaining = 0
+        }
+    }
+    // becuase declaures opaque return type view, but empty view on 'else' declare method as @ViewBuilder
+    @ViewBuilder
+    private func body (for size: CGSize) -> some View {
+        if card.isFaceUp || !card.isMatched {
             ZStack(){
-                if (card.isFaceUp) {
-                    RoundedRectangle(cornerRadius: cornerRadius).fill(Color.white)
-                    RoundedRectangle(cornerRadius: cornerRadius).stroke(lineWidth: edgeLineWidth)// moved to HStack .aspectRatio(2/3, contentMode: .fit)// stroke makes a 1 point line around edge
-                    Text(card.content)
-                } else {
-                    // only flip if !matched else is matched 'magically' removes card
-                    if !card.isMatched {
-                       RoundedRectangle(cornerRadius: cornerRadius)
-                        .fill(LinearGradient(gradient: gradient, startPoint: .topLeading, endPoint: .bottomTrailing))// don't need this because moved to single line in HStack.aspectRatio(2/3, contentMode: .fit)
+                Group {
+                // works, but want custom shape, new file for shape::  Circle().padding(5).opacity(0.4)
+                // how to set animatedBonus time to know card.bonusTimeRemaing (around hour 1:30 of lesson video 6
+                if card.isConsumingBonusTime {
+                Pie(startAngle: Angle.degrees(0-90), endAngle: Angle.degrees(-animatedBonusRemaining*360-90), clockwise: true)
+                   
+                    .onAppear() { // this synch
+                        startBonusTimeAnimation()
                     }
+                } else {
+                    Pie(startAngle: Angle.degrees(0-90), endAngle: Angle.degrees(-card.bonusRemaing*360-90), clockwise: true)                }
                 }
+                    .padding(5).opacity(0.4)
+                Text(card.content)
+                    .font(Font.system(size: fontSize(for: size)))
+                    .rotationEffect(Angle.degrees(card.isMatched ? 360: 0))
+                    .animation(card.isMatched ? Animation.linear(duration: 1.0).repeatForever(autoreverses: false) : .default)
             }
-            //.font(Font.system(size: min(geometry.size.width, geometry.size.height) * fontScaleFactor)) // because it touches edge, do *0.75
-            .font(Font.system(size: fontSize(for: geometry.size)))
+            
+            .cardify(isFaceUp: card.isFaceUp, gradient: gradient) // the extenision defined in file Cardify
+            .transition(AnyTransition.scale)
+            
         }
     }
     // MARK: -  Drawing constants to move magic numbers out of code
-    let cornerRadius: CGFloat = 10.0 // not a generic float, but must write exactly the data type
-    let edgeLineWidth: CGFloat = 3
-    let fontScaleFactor: CGFloat = 0.75
-    func fontSize(for size: CGSize) -> CGFloat {
-        min(size.width, size.height) * 0.75
+    // connstants can be private
+    
+    private let fontScaleFactor: CGFloat = 0.75
+    private func fontSize(for size: CGSize) -> CGFloat {
+        min(size.width, size.height) * 0.7
     }
     
 }
@@ -75,6 +108,10 @@ struct CardView: View {
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        EmojiMemoryGameView(viewModel: EmojiMemoryGameViewModel())
+        let game = EmojiMemoryGameViewModel()
+        game.choose(card: game.cards[0]) // statically select card to see front
+        game.choose(card: game.cards[1])
+        
+        return  EmojiMemoryGameView(viewModel: game)
     }
 }

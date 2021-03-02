@@ -9,8 +9,8 @@ import SwiftUI
 
 struct Grid<Item, ItemView>: View where Item: Identifiable, ItemView: View{ // the where are constraints because in the
                         // body foreach loop item must be identifiable and viewForItem must by constrained to type view
-    var items: [Item]
-    var viewForItem: (Item) -> ItemView
+    private var items: [Item]
+    private var viewForItem: (Item) -> ItemView
     
     
     init (_ items: [Item], viewForItem: @escaping (Item) -> ItemView) {
@@ -24,24 +24,25 @@ struct Grid<Item, ItemView>: View where Item: Identifiable, ItemView: View{ // t
         }
     }
     // func 1 after changed geometry reader to use Gridlayout, this is not used
-    func body(for size: CGSize) -> some View {
+    private func body(for size: CGSize) -> some View {
         ForEach(items) { item in
             body(for: item, in: size)
         }
     }
     // func 2
-    func body (for item: Item, in size: CGSize) -> some View {
+    private func body (for item: Item, in size: CGSize) -> some View {
         return viewForItem(item)
     }
     
     //func 1b
-    func body(for layout: GridLayout) -> some View {
+    private func body(for layout: GridLayout) -> some View {
         ForEach(items) { item in
             self.body(for: item, in: layout)
         }
     }
+    
     // func 2b
-    func body(for item: Item, in layout: GridLayout) -> some View {
+    private  func body(for item: Item, in layout: GridLayout) -> some View {
         let index = items.firstIndex(matching: item)
         return Group {
             if index != nil {

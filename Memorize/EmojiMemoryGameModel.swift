@@ -13,10 +13,10 @@ import Foundation
 
 // only at run time is the 'face' <CardContent> of the card determined, ex string (Emoji), image etc
 struct EmojiMemoryGameModel<CardContent> where CardContent: Equatable {
-    var cards: Array<Card>
+    private(set) var cards: Array<Card> // Access control: write is private, read public
     var score = 0
     
-    var indexOfTheOneAndOnlyFaceUpCard: Int? {
+    private var indexOfTheOneAndOnlyFaceUpCard: Int? {
         get { cards.indices.filter { cards[$0].isFaceUp }.only
         }
         set { // the setter flips all cards face down, that's what it sets
@@ -30,7 +30,6 @@ struct EmojiMemoryGameModel<CardContent> where CardContent: Equatable {
         // dont want to print, kept for code reference print("card chosen : \(card)")
         if let chosenIndex = cards.firstIndex(matching: card), !cards[chosenIndex].isFaceUp, !cards[chosenIndex].isMatched { // , is sequential and
             cards[chosenIndex].flipCount += 1
-            cards[chosenIndex].startTimer()
             if let potentialMatchIndex = indexOfTheOneAndOnlyFaceUpCard {
                 if cards[chosenIndex].content == cards[potentialMatchIndex].content {
                     cards[chosenIndex].isMatched = true
@@ -66,21 +65,60 @@ struct EmojiMemoryGameModel<CardContent> where CardContent: Equatable {
         cards.shuffle() // with here, the click to reverse works correctly with @Published private var model: MemoryGame<String>
     }
     
-    struct Card: Identifiable { // identifiable is ieterator
-        var isFaceUp: Bool = false
-        var isMatched: Bool = false
-        var content: CardContent // don't care what the card will be when created passing the card 'type' <CardContent>
-        var flipCount: Int = 0
-        var totalFaceupTime: TimeInterval = 0
-        var timeStamp: Date? // when card was flipped
-        var id: Int // this is for identifiable
-        
-        mutating func startTimer() {
-            timeStamp = Date()
+    struct Card: Identifiable { // identifiable is ieterator -- because the array is private, it's ok that card not set private
+        var isFaceUp: Bool = false {
+            didSet {
+                if isFaceUp {
+                    startUsingBonusTime()
+                } else {
+                    stopUsingBonusTime()
+                }
+            }
         }
         
-        private mutating func stopTimer() {
-            totalFaceupTime = timeStamp!.timeIntervalSinceNow
+        var isMatched: Bool = false {
+            didSet {
+                stopUsingBonusTime()
+            }
+        }
+        
+        var content: CardContent // don't care what the card will be when created passing the card 'type' <CardContent>
+        var flipCount: Int = 0
+        var id: Int // this is for identifiable
+        
+        // MARK: - Bonus Time
+        var bonusTimeLimit: TimeInterval = 6
+        
+        private var faceUpTime: TimeInterval {
+            if let lastFaceUpDate = self.lastFaceUpDate {
+                return pastFaceUpTime + Date().timeIntervalSince(lastFaceUpDate)
+            } else {
+                return pastFaceUpTime
+            }
+        }
+        
+        var lastFaceUpDate: Date?
+        var pastFaceUpTime: TimeInterval = 0
+        var bonusTimeRemaining: TimeInterval {
+            max(0, bonusTimeLimit - faceUpTime)
+        }
+        var bonusRemaing: Double {
+            (bonusTimeLimit > 0 && bonusTimeRemaining > 0) ? bonusTimeRemaining/bonusTimeLimit : 0
+        }
+        var hasEarnedBonus: Bool {
+            isMatched && bonusTimeRemaining > 0
+        }
+        var isConsumingBonusTime: Bool {
+            isFaceUp && !isMatched && bonusTimeRemaining > 0
+        }
+        private mutating func startUsingBonusTime() {
+            if isConsumingBonusTime, lastFaceUpDate == nil {
+                lastFaceUpDate = Date()
+            }
+        }
+        private mutating func stopUsingBonusTime() {
+            pastFaceUpTime = faceUpTime
+            self.lastFaceUpDate = nil
         }
     }
 }
